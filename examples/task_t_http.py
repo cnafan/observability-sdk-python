@@ -12,7 +12,7 @@ def attributes(run_id: str) -> dict[str, str]:
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         with TraceContextPropagation.extract_to_current(self.headers):
-            with observe.trace("message/send", SignalKind.SERVER, attributes(run_id)) as span:
+            with observe.trace("SendMessage", SignalKind.SERVER, attributes(run_id)) as span:
                 self.rfile.read(int(self.headers.get("Content-Length", "0")))
                 observe.metric("task.count", 1, {"task.type": "diagnosis"})
                 observe.log(
@@ -36,7 +36,7 @@ with ObservabilitySdk.start(config) as sdk:
     thread = Thread(target=server.handle_request, daemon=True)
     thread.start()
 
-    with observe.trace("message/send", SignalKind.CLIENT, attributes(run_id)) as span:
+    with observe.trace("SendMessage", SignalKind.CLIENT, attributes(run_id)) as span:
         with span.make_current():
             headers: dict[str, str] = {}
             TraceContextPropagation.inject(headers)
